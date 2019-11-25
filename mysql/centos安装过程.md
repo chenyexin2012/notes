@@ -53,7 +53,7 @@
 
 11. 开放端口号（以下操作使用root用户）：  
 
-		开发3306端口：firewall-cmd --zone=public --add-port=3306/tcp --permanent
+		开放3306端口：firewall-cmd --zone=public --add-port=3306/tcp --permanent
 		重启：firewall-cmd --reload
 		查询：firewall-cmd --query-port=3306/tcp
 

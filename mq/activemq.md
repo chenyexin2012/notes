@@ -49,3 +49,41 @@
     user: user, user
 
 
+## 持久化配置
+
+### 默认为KahaDB存储
+
+activemq.xml，broker节点下：
+
+        <persistenceAdapter>
+            <kahaDB directory="${activemq.data}/kahadb"/>
+        </persistenceAdapter>
+
+
+### JDBC存储
+
+使用JDBC持久化方式，数据库会默认生成以下几张表：
+
+    activemq_msgs：queue和topic的消息都存在这个表中
+    activemq_acks：存储持久订阅的信息和最后一个持久订阅接收的消息ID
+    activemq_lock：跟kahadb的lock文件类似，确保数据库在某一时刻只有一个broker在访问
+
+activemq.xml，broker节点下：
+
+    <persistenceAdapter>    
+        <jdbcPersistenceAdapter dataSource="mysqlDataSource" createTablesOnStartup="true" /> 
+    </persistenceAdapter>
+
+    <bean id="mysqlDataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close"> 
+        <property name="driverClassName" value="com.mysql.jdbc.Driver"/>      
+        <property name="url" value="jdbc:mysql://192.168.227.129:3306/activemq?relaxAutoCommit=true"/>      
+        <property name="username" value="root"/>     
+        <property name="password" value="123456"/>   
+    </bean>
+
+在lib文件夹下添加所需依赖的jar：
+
+    commons-dbcp-1.4
+    mysql-connector-java-8.0.9
+    commons-pool-1.6 
+

@@ -10,6 +10,12 @@
     开放61616（连接）端口：firewall-cmd --zone=public --add-port=61616/tcp --permanent
     重启：firewall-cmd --reload
 
+    开机自启设置：在目录 /usr/lib/systemd/system 下添加文件 activemq.service，使用systemctl命令进行相关设置
+
+[参考防火墙相关命令](https://blog.csdn.net/u014079773/article/details/79745819)
+
+[参考systemctl相关命令](https://blog.csdn.net/qq_23587541/article/details/82849480)
+
 ## 主要配置文件说明（conf文件夹下）
 
 
@@ -20,14 +26,14 @@
 
 打开activemq.xml，在broker下添加：
 
-        <!-- 添加访问ActiveMQ的账号密码 -->
-        <plugins>
-            <simpleAuthenticationPlugin>
-                <users>
-                    <authenticationUser username="holmes" password="123456" groups="users,admins"/>
-                </users>
-            </simpleAuthenticationPlugin>
-        </plugins>
+    <!-- 添加访问ActiveMQ的账号密码 -->
+    <plugins>
+        <simpleAuthenticationPlugin>
+            <users>
+                <authenticationUser username="holmes" password="123456" groups="users,admins"/>
+            </users>
+        </simpleAuthenticationPlugin>
+    </plugins>
 
 
 ## 配置管理页面登录账号和密码

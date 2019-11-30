@@ -93,3 +93,19 @@ activemq.xml，broker节点下：
     mysql-connector-java-8.0.9
     commons-pool-1.6 
 
+
+## 如何保证顺序消费
+
+### 使用独占消费者（exclusive consumer）
+
+ActiveMQ从4.X版本开始支持ExclusiveConsumer（或者说是Exclusive Queue），Broker会从多个Consumer中挑选一个Consumer来处理所有的消息，从而保证消息的有序处理。一旦这个Consumer失效，Broker会自动切换到其他的Consumer来消费。
+
+可以在消费端通过Destination的Option来创建一个Exclusive Consumer，例如：
+
+    ActiveMQQueue queue = new ActiveMQQueue("TEST.QUEUE?consumer.exclusive=true");
+
+还可以设置优先级针对网络情况进行优化，如下：
+
+    ActiveMQQueue queue = new ActiveMQQueue("TEST.QUEUE?consumer.exclusive=true&consumer.priority=10");
+
+### 

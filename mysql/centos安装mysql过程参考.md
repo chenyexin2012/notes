@@ -57,8 +57,12 @@
 		重启：firewall-cmd --reload
 		查询：firewall-cmd --query-port=3306/tcp
 
+	[参考防火墙相关命令](https://blog.csdn.net/u014079773/article/details/79745819)
+
 12. 使用systemctl设置开机自启：
 
 	进入目录/usr/lib/systemd/system，添加文件[mysql.service](mysql.service)
+
+	[参考systemctl相关命令](https://blog.csdn.net/qq_23587541/article/details/82849480)
 
 	

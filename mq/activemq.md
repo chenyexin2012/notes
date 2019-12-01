@@ -108,4 +108,31 @@ ActiveMQ从4.X版本开始支持ExclusiveConsumer（或者说是Exclusive Queue�
 
     ActiveMQQueue queue = new ActiveMQQueue("TEST.QUEUE?consumer.exclusive=true&consumer.priority=10");
 
-### 
+### 消息分组(massage groups)
+
+在Message对象上设置JMSXGroupID属性来对消息进行分组。Message Groups这种特性保证具有相同JMSXGroupID的消息能够被同一个活跃的消费者消费，这同时也是一种负载均衡的机制。也可以通过设置JMSXGroupSeq来关闭分组。
+
+例如：
+
+    Message message = session.createTextMessage("hello,world");
+    message.setStringProperty("JMSXGroupID","GroupA");
+    //message.setIntProperty("JMSXGroupSeq", -1);
+
+如果使用JmsMessagingTemplate，可以通过如下设置:
+
+        Map<String, Object> headers = new HashMap<>();
+        headers.put("JMSXGroupID", "groupA");
+        //headers.put("JMSXGroupSeq", "-1");
+        jmsTemplate.convertAndSend(TOPIC, "text message", headers);
+
+
+### 消息确认机制
+
+Activemq消息确认机制有五种类型：
+
+    SESSION_TRANSACTED=0：事务提交并确认
+    AUTO_ACKNOWLEDGE=1 ：自动确认（默认）
+    CLIENT_ACKNOWLEDGE=2：客户端手动确认 
+    UPS_OK_ACKNOWLEDGE=3： 自动批量确认
+    INDIVIDUAL_ACKNOWLEDGE=4：单条消息确认（Activemq独有）
+

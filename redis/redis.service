@@ -1,0 +1,41 @@
+[Unit]
+Description=Redis
+After=network.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+# 启动用户
+User=redis
+# 启动用户所在组
+Group=services_group
+# 
+#Environment=
+
+# pid文件路径
+PIDFile=/home/redis/data/redis.pid
+
+# Disable service start and stop timeout logic of systemd for mysqld service.
+TimeoutSec=5
+
+# Execute pre and post scripts as root
+#PermissionsStartOnly=true
+# Needed to create system tables
+#ExecStartPre=
+
+# 启动命令
+ExecStart=/home/redis/services/redis-5.0.7/bin/redis-server home/redis/services/redis-5.0.7/bin/redis.conf --daemonize no
+# 关闭命令
+ExecStop=/home/redis/services/redis-5.0.7/bin/redis-cli -h 127.0.0.1 -p 6379 shutdown
+# Use this to switch malloc implementation
+#EnvironmentFile=-/etc/sysconfig/
+
+# Sets open_files_limit
+LimitNOFILE = 5000
+
+Restart=on-failure
+
+RestartPreventExitStatus=1
+
+PrivateTmp=false

@@ -24,7 +24,7 @@ TimeoutSec=5
 # Needed to create system tables
 #ExecStartPre=
 
-# 启动命令
+# 启动命令，不理解为何需要设置daemonize为no，设置为yes无法开机自启
 ExecStart=/home/redis/services/redis-5.0.7/bin/redis-server home/redis/services/redis-5.0.7/bin/redis.conf --daemonize no
 # 关闭命令
 ExecStop=/home/redis/services/redis-5.0.7/bin/redis-cli -h 127.0.0.1 -p 6379 shutdown

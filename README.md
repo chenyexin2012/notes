@@ -11,3 +11,7 @@
 # Redis
 
 [redis安装过程](redis/redis.md)
+
+# zookeeper
+
+[zookeeper安装过程](zookeeper/zookeeper.md)

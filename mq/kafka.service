@@ -1,0 +1,44 @@
+[Unit]
+Description=Kafka Server
+# 在zookeeper之后启动
+After=network.target zookeeper.service
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+# 启动用户
+User=kafka
+# 启动用户所在组
+Group=services_group
+# 
+Environment=JAVA_HOME=/usr/local/java/jdk1.8.0_221
+
+# pid文件路径
+#PIDFile=
+
+# Disable service start and stop timeout logic of systemd for mysqld service.
+TimeoutSec=5
+
+# Execute pre and post scripts as root
+#PermissionsStartOnly=true
+# Needed to create system tables
+#ExecStartPre=
+
+# 启动命令，不要添加 &
+ExecStart=/home/kafka/services/kafka_2.13-2.4.0/bin/kafka-server-start.sh /home/kafka/services/kafka_2.13-2.4.0/config/server.properties
+# 关闭命令
+ExecStop=/home/kafka/services/kafka_2.13-2.4.0/bin/kafka-server-stop.sh
+# 重启命令
+# ExecReload=
+# Use this to switch malloc implementation
+#EnvironmentFile=-/etc/sysconfig/
+
+# Sets open_files_limit
+LimitNOFILE = 5000
+
+Restart=on-failure
+
+RestartPreventExitStatus=1
+
+PrivateTmp=false

@@ -37,6 +37,8 @@
     docker images
     ## 查看运行中的镜像
     docker ps
+    ## 删除镜像
+    docker rmi XXX
 
 ## 使用docker安装mysql
 
@@ -77,3 +79,7 @@
     docker top XXX
     ## 删除容器
     docker rm XXX
+
+
+## 使用docker部署jar
+

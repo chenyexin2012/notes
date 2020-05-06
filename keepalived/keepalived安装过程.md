@@ -56,4 +56,6 @@
     firewall-cmd --reload
 
 
-## 
+## 使用keepalived实现mysql高可用
+
+[https://www.cnblogs.com/pangguoming/p/9640410.html]

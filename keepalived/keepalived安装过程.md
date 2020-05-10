@@ -17,7 +17,7 @@
 
 3. 解压安装包，将解压文件移动至 /usr/local/keepalived 目录下
 
-4. 生成 Makefile 文件
+4. 进入文件目录，生成 Makefile 文件
 
     ./configure
 

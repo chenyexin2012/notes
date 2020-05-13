@@ -85,3 +85,16 @@ AOF持久化配置：
 [参考配置文件](redis.conf)
 
 ## redis主从复制
+
+直接修改从服务器配置即可：
+
+    # 配置主服务器密码（如需）
+    # 主从复制. 设置该数据库为其他数据库的从数据库.
+    # 设置当本机为slave服务时，设置master服务的IP地址及端口，在Redis启动时，它会自动从master进行数据同步
+    #
+    # slaveof <masterip> <masterport>
+
+    # 当master服务设置了密码保护时(用requirepass制定的密码)
+    # slav服务连接master的密码
+    #
+    # masterauth <master-password>

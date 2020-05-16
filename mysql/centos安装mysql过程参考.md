@@ -8,7 +8,11 @@
 
 4. 使用初始化命令 
 
+		# 执行初始化命令，确认配置中的文件路径所属权限为mysql，并且data文件夹下不能存在文件
 		./bin/mysqld --defaults-file=/home/mysql/services/mysql-slave-5.7.25/my.cnf --initialize --user=mysql --datadir=/home/mysql/data-slave/data --basedir=/home/mysql/services/mysql-slave-5.7.25
+
+		# my.cnf的默认路径为/etc/my.cnf， 也可直接运行下面的命令，直接使用默认路径的配置文件进行初始化
+		./bin/mysqld --initialize --user=mysql
 
 5. 查看日志获取初始密码
 
@@ -41,6 +45,10 @@
 		或者 set password=password("123456");
 
 		flush privileges; # 刷新权限信息（可省略）
+
+	注：mysql 8.0默认使用caching_sha2_password身份验证机制，客户端若不支持，会提示错误信息，如需改回mysql_native_password，可使用下述命令：
+
+		alter user 'root'@'localhost' identified with mysql_native_password by '123456';
 	
 9. 可以使用以下命令关闭数据库：
 

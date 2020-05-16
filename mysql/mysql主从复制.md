@@ -57,9 +57,10 @@
 		+------------------+----------+--------------+--------------------------------------------------+-------------------+
 		| File             | Position | Binlog_Do_DB | Binlog_Ignore_DB                                 | Executed_Gtid_Set |
 		+------------------+----------+--------------+--------------------------------------------------+-------------------+
-		| mysql-bin.000016 | 51483007 |              | sys,mysql,information_schema,performation_schema |                   |
+		| mysql-bin.000006 |     1091 |              | sys,mysql,information_schema,performation_schema |                   |
 		+------------------+----------+--------------+--------------------------------------------------+-------------------+
 		1 row in set (0.00 sec)
+
 
 
 4. 修改从库配置文件在[mysqld]部分新增：
@@ -74,7 +75,7 @@
 	
 5. 重启从库后，执行同步SQL并开启同步模式：
 
-		mysql> CHANGE MASTER TO MASTER_HOST='192.168.31.11', MASTER_USER='slave', MASTER_PASSWORD='123456', MASTER_LOG_FILE='mysql-bin.000016', MASTER_LOG_POS=51483007;
+		mysql> CHANGE MASTER TO MASTER_HOST='192.168.31.11', MASTER_USER='slave', MASTER_PASSWORD='123456', MASTER_LOG_FILE='mysql-bin.000006', MASTER_LOG_POS=1091;
 		Query OK, 0 rows affected (0.03 sec)
 
 		mysql> START SLAVE;
@@ -143,6 +144,15 @@
 						Channel_Name: 
 				Master_TLS_Version: 
 		1 row in set (0.00 sec)
+
+	注：如果安装的版本为mysql 8.0，由于身份验证方式不同，可能会出现
+
+		Last_IO_Error: error connecting to master 'slave@192.168.31.11:3306' - retry-time: 60 retries: 3 message: Authentication plugin 'caching_sha2_password' reported error: Authentication requires secure connection.
+
+	此时主库在创建slave用户时应注意选择认证方式，如：
+
+		CREATE USER 'slave'@'192.168.31.12' IDENTIFIED WITH mysql_native_password BY '123456';
+
 
 7. 配置双主复制（如需）
 

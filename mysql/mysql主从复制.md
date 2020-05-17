@@ -257,3 +257,7 @@
 		14 rows in set (0.00 sec)
 
 		Rpl_semi_sync_master_clients !=0 and Rpl_semi_sync_master_status = ON
+
+#### 配置多线程复制
+
+[https://www.cnblogs.com/liuzhongrong/p/12390291.html]

@@ -204,8 +204,8 @@
 以上操作也可写入配置文件中，保证永久生效：
 
 		[mysqld]
-		rpl_semi_sync_master_enabled = 1;
-		rpl_semi_sync_master_timeout = 10000;
+		rpl_semi_sync_master_enabled=1
+		rpl_semi_sync_master_timeout=10000
 
 
 4. 从库安装半同步复制模块并启用半同步复制
@@ -224,6 +224,11 @@
 		| rpl_semi_sync_slave_trace_level | 32    |
 		+---------------------------------+-------+
 		2 rows in set (0.00 sec)
+
+	以上操作也可写入配置文件中，保证永久生效：
+
+		[mysqld]
+		rpl_semi_sync_slave_enabled=1
 
 5. 重启io线程
 
@@ -260,4 +265,67 @@
 
 #### 配置多线程复制
 
-[https://www.cnblogs.com/liuzhongrong/p/12390291.html]
+通过执行 show global variables like '%slave_para%'; 命令可以查看复制类型和并行数量，一般复制类型默认为DATABASE，并发数量为0。
+
+		mysql> show global variables like '%slave_para%';
+		+------------------------+----------+
+		| Variable_name          | Value    |
+		+------------------------+----------+
+		| slave_parallel_type    | DATABASE |
+		| slave_parallel_workers | 0        |
+		+------------------------+----------+
+		2 rows in set (0.17 sec)
+
+		参数说明：
+		slave_parallel_type：复制类型，此处为DATABASE，表示同一个数据库使用一个线程进行复制，单库不能并行。另一个可配值为LOGICAL_CLOCK，表示基于组提交的并行复制方式，这样同一个数据库下可以有多个线程。
+		slave_parallel_workers：并发线程数量。
+
+1. 停止节点复制，设置复制类型为LOGICAL_CLOCK，并发线程数量为5
+
+		mysql> stop slave;
+		Query OK, 0 rows affected (0.04 sec)
+
+		mysql> set global slave_parallel_type=LOGICAL_CLOCK;
+		Query OK, 0 rows affected (0.00 sec)
+
+		mysql> set global slave_parallel_workers=5;
+		Query OK, 0 rows affected (0.00 sec)
+
+		mysql> show global variables like '%slave_para%';
+		+------------------------+---------------+
+		| Variable_name          | Value         |
+		+------------------------+---------------+
+		| slave_parallel_type    | LOGICAL_CLOCK |
+		| slave_parallel_workers | 5             |
+		+------------------------+---------------+
+		2 rows in set (0.00 sec)
+
+		以上操作也可写入配置文件中，保证永久生效：
+
+		[mysqld]
+		slave_parallel_type=LOGICAL_CLOCK
+		slave_parallel_workers=5
+
+2. 开启复制，通过 show processlist 命令查看当前连接的数量，可以看到5个等待线程
+
+		mysql> start slave;
+		Query OK, 0 rows affected (0.07 sec)
+
+		mysql> show processlist;
+		+----+-----------------+---------------------+------+-------------+--------+---------------------------------------------------------------+------------------+
+		| Id | User            | Host                | db   | Command     | Time   | State                                                         | Info             |
+		+----+-----------------+---------------------+------+-------------+--------+---------------------------------------------------------------+------------------+
+		|  6 | event_scheduler | localhost           | NULL | Daemon      | 142480 | Waiting on empty queue                                        | NULL             |
+		| 10 | slave           | 192.168.31.12:35546 | NULL | Binlog Dump | 142470 | Master has sent all binlog to slave; waiting for more updates | NULL             |
+		| 11 | root            | localhost:40198     | NULL | Query       |      0 | starting                                                      | show processlist |
+		| 12 | system user     | connecting host     | NULL | Connect     |     89 | Waiting for master to send event                              | NULL             |
+		| 13 | system user     |                     | NULL | Query       |     89 | Slave has read all relay log; waiting for more updates        | NULL             |
+		| 14 | system user     |                     | NULL | Connect     |     89 | Waiting for an event from Coordinator                         | NULL             |
+		| 15 | system user     |                     | NULL | Connect     |     89 | Waiting for an event from Coordinator                         | NULL             |
+		| 16 | system user     |                     | NULL | Connect     |     89 | Waiting for an event from Coordinator                         | NULL             |
+		| 17 | system user     |                     | NULL | Connect     |     89 | Waiting for an event from Coordinator                         | NULL             |
+		| 18 | system user     |                     | NULL | Connect     |     89 | Waiting for an event from Coordinator                         | NULL             |
+		+----+-----------------+---------------------+------+-------------+--------+---------------------------------------------------------------+------------------+
+		10 rows in set (0.02 sec)
+
+

@@ -328,4 +328,99 @@
 		+----+-----------------+---------------------+------+-------------+--------+---------------------------------------------------------------+------------------+
 		10 rows in set (0.02 sec)
 
+#### 避免主从复制主键冲突方案（自增主键）
+
+数据库表使用自增主键的情况下，若发生主从切换，当主库数据为完全同步至从库，此时若向从库插入数据，可能会发生主键冲突问题。为了避免这种问题，需要保证数据库不会生成相同的主键。假设只有两台服务器，可以将其中一台主键设置为1，3，5，7，9...，另一个台设置为0，2，4，6，8...。操作方式如下：
+
+1. 设置主库主键自增起始点为1，步长为2
+
+		mysql> set global auto_increment_offset = 1;	#全局配置
+		Query OK, 0 rows affected (0.00 sec)
+
+		mysql> set global auto_increment_increment = 2;
+		Query OK, 0 rows affected (0.00 sec)
+
+		mysql> set session auto_increment_offset = 1;	#当前连接
+		Query OK, 0 rows affected (0.00 sec)
+
+		mysql> set session auto_increment_increment = 2; 
+		Query OK, 0 rows affected (0.00 sec)
+
+
+		以上操作也可写入配置文件中，保证永久生效：
+
+		[mysqld]
+		auto_increment_increment=2
+		auto_increment_offset=1
+
+2. 设置主库主键自增起始点为2，步长为2
+
+		mysql> set global auto_increment_offset = 2;	#全局配置
+		Query OK, 0 rows affected (0.00 sec)
+
+		mysql> set global auto_increment_increment = 2;
+		Query OK, 0 rows affected (0.00 sec)
+
+		mysql> set session auto_increment_offset = 2;	#当前连接
+		Query OK, 0 rows affected (0.00 sec)
+
+		mysql> set session auto_increment_increment = 2; 
+		Query OK, 0 rows affected (0.00 sec)
+
+
+		以上操作也可写入配置文件中，保证永久生效：
+
+		[mysqld]
+		auto_increment_increment=2
+		auto_increment_offset=2
+
+
+#### 主从复制主键冲突解决方案
+
+1. 查看同步状态
+
+		mysql> show slave status\G;
+		*************************** 1. row ***************************
+					Slave_IO_State: Waiting for master to send event
+						Master_Host: 192.168.31.11
+						Master_User: slave
+						Master_Port: 3306
+						Connect_Retry: 60
+					Master_Log_File: mysql-bin.000016
+				Read_Master_Log_Pos: 155
+					Relay_Log_File: localhost-relay-bin.000006
+						Relay_Log_Pos: 322
+				Relay_Master_Log_File: mysql-bin.000006
+					Slave_IO_Running: Yes
+					Slave_SQL_Running: No
+					Replicate_Do_DB: 
+				Replicate_Ignore_DB: 
+				Replicate_Do_Table: 
+			Replicate_Ignore_Table: 
+			Replicate_Wild_Do_Table: 
+		Replicate_Wild_Ignore_Table: 
+						Last_Errno: 1062
+						Last_Error: Could not execute Write_rows event on table mybatis_demo.t_user; Duplicate entry '10338' for key 'PRIMARY', Error_code: 1062; handler error HA_ERR_FOUND_DUPP_KEY; the event's master log mysql-bin.000006, end_log_pos 6024
+						......
+
+	日志“Could not execute Write_rows event on table mybatis_demo.t_user; Duplicate entry '10338' for key 'PRIMARY', Error_code: 1062; handler error HA_ERR_FOUND_DUPP_KEY; the event's master log mysql-bin.000006, end_log_pos 6024”表明主键发生了冲突
+
+2. 为了保证后面的同步能够正常进行，先停止slave，设置跳过错误复制，再启动
+
+		mysql> stop slave;
+		Query OK, 0 rows affected (0.49 sec)
+
+		mysql> set global sql_slave_skip_counter=1062;
+		Query OK, 0 rows affected (0.02 sec)
+
+		mysql> start slave;
+		Query OK, 0 rows affected (0.03 sec)
+
+		此处1062表示Duplicate entry异常，见show slave status输出结果 Last_Errno: 1062。
+
+3. 再次查看复制状态，可以发现已经正常。后续数据可视情况手动进行处理。
+
+[参考博客]（https://mp.weixin.qq.com/s/rZZbLmN0Klq0o0bvnijizw）
+[参考博客]（https://www.cnblogs.com/Uest/p/7941329.html）
+
 

@@ -1,0 +1,43 @@
+[Unit]
+Description=RocketMQ Server
+After=network.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+# 启动用户
+User=rocketmq
+# 启动用户所在组
+Group=services_group
+# 
+Environment=JAVA_HOME=/usr/local/java/jdk1.8.0_221
+
+# pid文件路径
+#PIDFile=
+
+# Disable service start and stop timeout logic of systemd for mysqld service.
+TimeoutSec=5
+
+# Execute pre and post scripts as root
+#PermissionsStartOnly=true
+# Needed to create system tables
+#ExecStartPre=
+
+# 启动命令
+ExecStart=/usr/local/rocketmq/bin/startrocketmq.sh
+# 关闭命令
+ExecStop=/usr/local/rocketmq/bin/stoprocketmq.sh
+# 重启命令
+# ExecReload=
+# Use this to switch malloc implementation
+#EnvironmentFile=-/etc/sysconfig/
+
+# Sets open_files_limit
+LimitNOFILE = 5000
+
+Restart=on-failure
+
+RestartPreventExitStatus=1
+
+PrivateTmp=false

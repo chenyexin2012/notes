@@ -104,7 +104,7 @@ docker run 命令说明:
     ## 停止所有容器
     docker stop $(docker ps -a -q)
     ## 删除所有容器
-    docker  rm $(docker ps -a -q)
+    docker rm $(docker ps -a -q)
 
 
 ## 使用docker部署jar
@@ -208,4 +208,5 @@ docker run 命令说明:
 
 2. 一键部署脚本
 
-[shipyard-deploy](shipyard-deploy)
+[英文部署脚本](shipyard-deploy-en)
+[中文部署脚本](shipyard-deploy-cn)

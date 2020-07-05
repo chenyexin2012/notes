@@ -1,7 +1,4 @@
 #!/bin/bash
-# Author 	: Zlyang By 2018-09-07
-# Description	: Auto deploy shipyard 
-# Email		: DBA_Master@163.com
 
 if [ "$1" != "" ] && [ "$1" = "-h" ]; then
     echo "Shipyard Deploy uses the following environment variables:"

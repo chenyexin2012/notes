@@ -190,6 +190,46 @@ docker run 命令说明:
 4. 在docker中运行 docker images 查看镜像
 
 
+## 搭建私有仓库 Registry
+
+1. 下载Registry镜像并启动
+
+    # 拉取镜像
+    docker pull registry
+
+    # 启动镜像
+    # -v /data/registry:/var/lib/registry 将宿主机的/data/registry目录绑定到容器/var/lib/registry目录，这个目录用于存放镜像
+    docker run -itd -v /data/registry:/var/lib/registry -p 5000:5000 --restart=always --name registry registry:latest 
+    
+    # 访问路径http://127.0.0.1:5000/v2/_catalog
+    [root@peer1 opt]# curl http://127.0.0.1:5000/v2/_catalog
+    {"repositories":[]}
+
+2. 测试仓库（将 registry 镜像推入仓库）
+
+    # 为镜像打标签，registry:latest 为需要上传的镜像，peer1:5000/registry:m 为目标镜像
+    docker tag registry:latest peer1:5000/registry:m
+
+    # 将镜像上传至仓库
+    docker push peer1:5000/registry:my
+
+    注：若出现 “Get https://127.0.0.1:5000/v2/: http: server gave HTTP response to HTTPS client” 说明出现了错误，这是因为上传需要使用 https，此时需要修改 /etc/docker/daemon.json 文件，加入 "insecure-registries": [ "peer1:5000"]，之后重启docker。
+
+    {
+        "registry-mirrors": ["https://3laho3y3.mirror.aliyuncs.com"],
+        "insecure-registries": [ "peer1:5000"]
+    }
+
+    # 查看所有镜像
+    curl http://peer1:5000/v2/_catalog
+
+    # 列出registry镜像的tag
+    curl http://peer1:5000/v2/registry/tags/list
+
+    # 拉取上传的镜像
+    docker pull peer1:5000/registry:my
+
+
 ## 安装图形化管理界面 shipyard
 
 1. 下载基础镜像

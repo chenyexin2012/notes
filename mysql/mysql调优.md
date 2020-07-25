@@ -6,24 +6,61 @@
 
 测试表为：
 
-    CREATE TABLE `employees` (
-        `emp_no` int(11) NOT NULL,
-        `birth_date` date NOT NULL,
-        `first_name` varchar(14) NOT NULL,
-        `last_name` varchar(16) NOT NULL,
-        `gender` enum('M','F') NOT NULL,
-        `hire_date` date NOT NULL,
-        PRIMARY KEY (`emp_no`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+    CREATE TABLE employees (
+        emp_no      INT             NOT NULL,
+        birth_date  DATE            NOT NULL,
+        first_name  VARCHAR(14)     NOT NULL,
+        last_name   VARCHAR(16)     NOT NULL,
+        gender      ENUM ('M','F')  NOT NULL,    
+        hire_date   DATE            NOT NULL,
+        PRIMARY KEY (emp_no)
+    );
 
-    CREATE TABLE `salaries` (
-        `emp_no` int(11) NOT NULL,
-        `salary` int(11) NOT NULL,
-        `from_date` date NOT NULL,
-        `to_date` date NOT NULL,
-        PRIMARY KEY (`emp_no`,`from_date`),
-        CONSTRAINT `salaries_ibfk_1` FOREIGN KEY (`emp_no`) REFERENCES `employees` (`emp_no`) ON DELETE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+    CREATE TABLE departments (
+        dept_no     CHAR(4)         NOT NULL,
+        dept_name   VARCHAR(40)     NOT NULL,
+        PRIMARY KEY (dept_no),
+        UNIQUE  KEY (dept_name)
+    );
+
+    CREATE TABLE dept_manager (
+        emp_no       INT             NOT NULL,
+        dept_no      CHAR(4)         NOT NULL,
+        from_date    DATE            NOT NULL,
+        to_date      DATE            NOT NULL,
+        FOREIGN KEY (emp_no)  REFERENCES employees (emp_no)    ON DELETE CASCADE,
+        FOREIGN KEY (dept_no) REFERENCES departments (dept_no) ON DELETE CASCADE,
+        PRIMARY KEY (emp_no,dept_no)
+    ); 
+
+    CREATE TABLE dept_emp (
+        emp_no      INT             NOT NULL,
+        dept_no     CHAR(4)         NOT NULL,
+        from_date   DATE            NOT NULL,
+        to_date     DATE            NOT NULL,
+        FOREIGN KEY (emp_no)  REFERENCES employees   (emp_no)  ON DELETE CASCADE,
+        FOREIGN KEY (dept_no) REFERENCES departments (dept_no) ON DELETE CASCADE,
+        PRIMARY KEY (emp_no,dept_no)
+    );
+
+    CREATE TABLE titles (
+        emp_no      INT             NOT NULL,
+        title       VARCHAR(50)     NOT NULL,
+        from_date   DATE            NOT NULL,
+        to_date     DATE,
+        FOREIGN KEY (emp_no) REFERENCES employees (emp_no) ON DELETE CASCADE,
+        PRIMARY KEY (emp_no,title, from_date)
+    ) 
+    ; 
+
+    CREATE TABLE salaries (
+        emp_no      INT             NOT NULL,
+        salary      INT             NOT NULL,
+        from_date   DATE            NOT NULL,
+        to_date     DATE            NOT NULL,
+        FOREIGN KEY (emp_no) REFERENCES employees (emp_no) ON DELETE CASCADE,
+        PRIMARY KEY (emp_no, from_date)
+    )
 
 使用索引可以防止查询数据时进行全表扫描，但是使用不当时可能造成索引失效，索引失效的场景主要有以下几种：
 
@@ -218,13 +255,116 @@
     1 row in set, 1 warning (0.00 sec)
 
 
+5. 隐式字符编码转换导致索引失效
+
+对表进行关联查询的过程中，由于关联字段的编码不同，比较过程中，MYSQLK可能会对字段的编码进行了隐式转换，导致索引失效。
+
+待测试。
 
 
+6. 不恰当的使用 like 通配符导致索引失效
+
+当使用 % 开头进行查询时，会使索引失效。
+
+案例A：
+
+首先为 first_name 字段添加索引：
+
+    alter table employees add index FIRST_NAME_INDEX(first_name)
+    -- 删除索引
+    -- alter table employees drop index FIRST_NAME_INDEX;
+
+对 first_name 字段进行检索：
+
+    mysql> explain select *from employees where first_name like "%atricio";
+    +----+-------------+-----------+------------+------+---------------+------+---------+------+--------+----------+-------------+
+    | id | select_type | table     | partitions | type | possible_keys | key  | key_len | ref  | rows   | filtered | Extra       |
+    +----+-------------+-----------+------------+------+---------------+------+---------+------+--------+----------+-------------+
+    |  1 | SIMPLE      | employees | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 299147 |    11.11 | Using where |
+    +----+-------------+-----------+------------+------+---------------+------+---------+------+--------+----------+-------------+
+    1 row in set, 1 warning (0.00 sec)
+
+    mysql> explain select *from employees where first_name like "%atrici%";
+    +----+-------------+-----------+------------+------+---------------+------+---------+------+--------+----------+-------------+
+    | id | select_type | table     | partitions | type | possible_keys | key  | key_len | ref  | rows   | filtered | Extra       |
+    +----+-------------+-----------+------------+------+---------------+------+---------+------+--------+----------+-------------+
+    |  1 | SIMPLE      | employees | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 299147 |    11.11 | Using where |
+    +----+-------------+-----------+------------+------+---------------+------+---------+------+--------+----------+-------------+
+    1 row in set, 1 warning (0.01 sec)
+
+    mysql> explain select *from employees where first_name like "Patrici%";
+    +----+-------------+-----------+------------+-------+------------------+------------------+---------+------+------+----------+-----------------------+
+    | id | select_type | table     | partitions | type  | possible_keys    | key              | key_len | ref  | rows | filtered | Extra                 |
+    +----+-------------+-----------+------------+-------+------------------+------------------+---------+------+------+----------+-----------------------+
+    |  1 | SIMPLE      | employees | NULL       | range | FIRST_NAME_INDEX | FIRST_NAME_INDEX | 44      | NULL |  452 |   100.00 | Using index condition |
+    +----+-------------+-----------+------------+-------+------------------+------------------+---------+------+------+----------+-----------------------+
+    1 row in set, 1 warning (0.00 sec)
 
 
+观察结果可知，使用 % 开头会使索引失效，使用 % 结尾则不一定会。
 
 
+7. 对含有索引的字段进行 +，-，*，/ 等运算，一定会使索引失效
 
+案例A：对 emp_no 字段进行检索
+
+    mysql> explain select *from employees where emp_no + 1 = 10002;
+    +----+-------------+-----------+------------+------+---------------+------+---------+------+--------+----------+-------------+
+    | id | select_type | table     | partitions | type | possible_keys | key  | key_len | ref  | rows   | filtered | Extra       |
+    +----+-------------+-----------+------------+------+---------------+------+---------+------+--------+----------+-------------+
+    |  1 | SIMPLE      | employees | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 299147 |   100.00 | Using where |
+    +----+-------------+-----------+------------+------+---------------+------+---------+------+--------+----------+-------------+
+    1 row in set, 1 warning (0.00 sec)
+
+    mysql> explain select *from employees where emp_no = 10002 - 1;
+    +----+-------------+-----------+------------+-------+---------------+---------+---------+-------+------+----------+-------+
+    | id | select_type | table     | partitions | type  | possible_keys | key     | key_len | ref   | rows | filtered | Extra |
+    +----+-------------+-----------+------------+-------+---------------+---------+---------+-------+------+----------+-------+
+    |  1 | SIMPLE      | employees | NULL       | const | PRIMARY       | PRIMARY | 4       | const |    1 |   100.00 | NULL  |
+    +----+-------------+-----------+------------+-------+---------------+---------+---------+-------+------+----------+-------+
+    1 row in set, 1 warning (0.00 sec)
+
+观察结果可知，当在 = 的左边进行字段的运算会导致索引失效，优化时可以将运算放在 = 的右边进行。
+
+
+8. 联合索引没有遵循最左匹配原则，一定会使索引失效。
+
+案例A：
+
+对 first_name 和 last_name 建立联合索引，此时没有单个字段索引。
+
+    alter table employees add index NAME_INDEX(first_name, last_name);
+    -- alter table employees drop index NAME_INDEX;
+
+对 last_name 进行检索：
+
+    mysql> explain select *from employees where first_name = "Saniya";
+    +----+-------------+-----------+------------+------+---------------+------------+---------+-------+------+----------+-------+
+    | id | select_type | table     | partitions | type | possible_keys | key        | key_len | ref   | rows | filtered | Extra |
+    +----+-------------+-----------+------------+------+---------------+------------+---------+-------+------+----------+-------+
+    |  1 | SIMPLE      | employees | NULL       | ref  | NAME_INDEX    | NAME_INDEX | 44      | const |  257 |   100.00 | NULL  |
+    +----+-------------+-----------+------------+------+---------------+------------+---------+-------+------+----------+-------+
+    1 row in set, 1 warning (0.00 sec)
+
+    mysql> explain select *from employees where first_name = "Saniya" and last_name = "Kalloufi";
+    +----+-------------+-----------+------------+------+---------------+------------+---------+-------------+------+----------+-------+
+    | id | select_type | table     | partitions | type | possible_keys | key        | key_len | ref         | rows | filtered | Extra |
+    +----+-------------+-----------+------------+------+---------------+------------+---------+-------------+------+----------+-------+
+    |  1 | SIMPLE      | employees | NULL       | ref  | NAME_INDEX    | NAME_INDEX | 94      | const,const |    1 |   100.00 | NULL  |
+    +----+-------------+-----------+------------+------+---------------+------------+---------+-------------+------+----------+-------+
+    1 row in set, 1 warning (0.00 sec)
+
+    mysql> explain select *from employees where last_name = "Kalloufi";
+    +----+-------------+-----------+------------+------+---------------+------+---------+------+--------+----------+-------------+
+    | id | select_type | table     | partitions | type | possible_keys | key  | key_len | ref  | rows   | filtered | Extra       |
+    +----+-------------+-----------+------------+------+---------------+------+---------+------+--------+----------+-------------+
+    |  1 | SIMPLE      | employees | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 299147 |    10.00 | Using where |
+    +----+-------------+-----------+------------+------+---------------+------+---------+------+--------+----------+-------------+
+    1 row in set, 1 warning (0.00 sec)
+
+观察结果可知，直接对 last_name 字段进行检索，索引是不会生效的。
+
+注：参照网上流传的部分说法，上述查询使用 last_name = "Kalloufi" and first_name = "Saniya" 时索引会失效，这是错误的，MYSQL会对SQL进行优化，此时依然会按照最左匹配原则进行检索，与书写的顺序并没有之间关联。
 
     
 

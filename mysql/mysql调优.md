@@ -259,7 +259,7 @@
 
 对表进行关联查询的过程中，由于关联字段的编码不同，比较过程中，MYSQLK可能会对字段的编码进行了隐式转换，导致索引失效。
 
-待测试。
+参考网上的说法，测试没有成功。
 
 
 6. 不恰当的使用 like 通配符导致索引失效
@@ -367,4 +367,22 @@
 注：参照网上流传的部分说法，上述查询使用 last_name = "Kalloufi" and first_name = "Saniya" 时索引会失效，这是错误的，MYSQL会对SQL进行优化，此时依然会按照最左匹配原则进行检索，与书写的顺序并没有之间关联。
 
     
+9. 使用了 IGNORE INDEX 关键字忽略索引。
 
+案例A：
+
+首先为 first_name 字段添加索引：
+
+    alter table employees add index FIRST_NAME_INDEX(first_name)
+    -- 删除索引
+    -- alter table employees drop index FIRST_NAME_INDEX;
+
+对 first_name 字段进行检索并忽略 FIRST_NAME_INDEX 索引：
+
+    mysql> explain select *from employees IGNORE INDEX(FIRST_NAME_INDEX) where first_name = "Saniya";
+    +----+-------------+-----------+------------+------+---------------+------+---------+------+--------+----------+-------------+
+    | id | select_type | table     | partitions | type | possible_keys | key  | key_len | ref  | rows   | filtered | Extra       |
+    +----+-------------+-----------+------------+------+---------------+------+---------+------+--------+----------+-------------+
+    |  1 | SIMPLE      | employees | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 299147 |    10.00 | Using where |
+    +----+-------------+-----------+------------+------+---------------+------+---------+------+--------+----------+-------------+
+    1 row in set, 1 warning (0.00 sec)

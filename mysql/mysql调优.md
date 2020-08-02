@@ -123,6 +123,8 @@
     alter table employees modify column birth_date date;
     update employees set birth_date = null where birth_date not like "1955-01%";
 
+再次查询 birth_date 字段不为空的数据：
+
     mysql> explain select *from employees where birth_date is not null;
     +----+-------------+-----------+------------+-------+------------------+------------------+---------+------+------+----------+-----------------------+
     | id | select_type | table     | partitions | type  | possible_keys    | key              | key_len | ref  | rows | filtered | Extra                 |

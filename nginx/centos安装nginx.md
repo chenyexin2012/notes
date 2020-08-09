@@ -1,6 +1,6 @@
 ## centos安装nginx
 
-[http://nginx.org/download/](nginx安装包下载地址)
+[nginx安装包下载地址](http://nginx.org/download/)
 
 1. 安装环境准备（如需）
 
@@ -16,9 +16,9 @@
 2. 下载nginx安装包至指定目录，解压
 
         # 以 nginx-1.9.15 为例
-        wget http://nginx.org/download/nginx-1.9.15.tar.gz
+        wget http://nginx.org/download/nginx-1.19.0.tar.gz
         # 解压文件
-        tar -zxvf nginx-1.9.15.tar.gz
+        tar -zxvf nginx-1.19.0.tar.gz
 
 3. 进入文件目录，生成 Makefile 文件
 
